@@ -1,47 +1,42 @@
-# MicroProfile generated Application
+# Demo of new AttachmentBuilder API in Open Liberty
 
-## Introduction
+Open Liberty now enables users to send `multipart/form-data` payloads via the JAX-RS APIs. To create the payload, a user
+will need to build and send a `List` of `IAttachment` objects.  The `IAttachment` objects can be built using the new
+`AttachmentBuilder` API.  Here is an example:
+```
+List<IAttachment> attachments = new ArrayList<>();
 
-MicroProfile Starter has generated this MicroProfile application for you.
+File personXml = new File("/Users/andymc/dev/multipart-response/multipart-response/person.xml");
+attachments.add(AttachmentBuilder.newBuilder("person.xml")
+           .inputStream("person.xml", new FileInputStream(personXml))
+           .contentType(MediaType.APPLICATION_XML_TYPE)
+           .build());
+File personJson = new File("/Users/andymc/dev/multipart-response/multipart-response/person.json");
+attachments.add(AttachmentBuilder.newBuilder("person.json")
+           .inputStream("person.json", new FileInputStream(personJson))
+           .contentType(MediaType.APPLICATION_JSON_TYPE)
+           .build());
+attachments.add(AttachmentBuilder.newBuilder("greeting")
+           .inputStream(new ByteArrayInputStream("Hi, I'm John Doe".getBytes()))
+           .build());
 
-The generation of the executable jar file can be performed by issuing the following command
+Client c = ClientBuilder.newClient();
+WebTarget target = c.target("http://localhost:9079/data/multipart/introduction");
+Response r = target.request(MediaType.TEXT_PLAIN)
+                   .header("Content-Type", "multipart/form-data")
+                   .post(Entity.entity(attachments, MediaType.MULTIPART_FORM_DATA_TYPE));
+```
 
-    mvn clean package
+The `MyClient` class has an example that you can use by sending a name and file name to.  That client class will then
+create a `multipart/form-data` request using (1) the name and (2) the actual file as the parts - and it will then send
+it to a server resource (conviently located in the same server!) that will process each part and return that part's
+size in bytes.
 
-This will create an executable jar file **multipart-response.jar** within the _target_ maven folder. This can be started by executing the following command
-
-    java -jar target/multipart-response.jar
-
-
-### Liberty Dev Mode
-
-During development, you can use Liberty's development mode (dev mode) to code while observing and testing your changes on the fly.
-With the dev mode, you can code along and watch the change reflected in the running server right away; 
-unit and integration tests are run on pressing Enter in the command terminal; you can attach a debugger to the running server at any time to step through your code.
-
-    mvn liberty:dev
-
-
-To launch the test page, open your browser at the following URL
-
-    http://localhost:9080/index.html  
-
-
-
-## Specification examples
-
-By default, there is always the creation of a JAX-RS application class to define the path on which the JAX-RS endpoints are available.
-
-Also, a simple Hello world endpoint is created, have a look at the class **HelloController**.
-
-More information on MicroProfile can be found [here](https://microprofile.io/)
-
-
-
-
-
-
-
+You can run this sample app by cloning this repo, entering the `multipart-response` directory and issuing the following
+command: 
+`mvn clean package liberty:run`
+Next, browse to: http://localhost:9080/ and enter a name and the fully-qualified path of a file on your file system, and
+then click the submit button.
 
 
 
