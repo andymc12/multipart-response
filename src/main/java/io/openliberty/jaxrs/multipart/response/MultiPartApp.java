@@ -7,5 +7,5 @@ import javax.ws.rs.core.Application;
  *
  */
 @ApplicationPath("/data")
-public class MultipartresponseRestApplication extends Application {
+public class MultiPartApp extends Application {
 }

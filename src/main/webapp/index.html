@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Eclipse MicroProfile demo</title>
+    <title>MultiPart Payload Demo</title>
 </head>
 <body>
 
-<h2>MicroProfile</h2>
+<h2>MultiPart Payload Demo</h2>
 
-<a href="data/hello" target="_blank" >Hello JAX-RS endpoint</a> <br/>
-
-
+<form action="/data/client/sendMultiPart" method="get">
+    <div><label for="name">Name:</label><input id="name" name="name" type="text" /></div>
+    <div><label for="file">File:</label><input id="file" name="file" type="text" /></div>
+    <div><input type="submit" /></div>
+</form>
 
 
 

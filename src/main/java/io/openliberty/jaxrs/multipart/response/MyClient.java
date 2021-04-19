@@ -7,13 +7,17 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -33,19 +37,7 @@ public class MyClient {
     @GET
     public List<IAttachment> sendAndGetAttachments() throws FileNotFoundException {
         List<IAttachment> attachments = new ArrayList<>();
-        /*
-        List<File> files = Arrays.asList(new File("/Users/andymc/dev/multipart-response/multipart-response/pom.xml"),
-                                         new File("/Users/andymc/dev/multipart-response/multipart-response/readme.md"),
-                                         new File("/Users/andymc/dev/multipart-response/multipart-response/stuff.xml"));
-        
-        for (int i=0; i<files.size(); i++) {
-            attachments.add(
-                AttachmentBuilder.newBuilder("file" + i)
-                                 .contentType(files.get(i).getName().endsWith(".xml") ? APPLICATION_XML : TEXT_PLAIN)
-                                 .inputStream(files.get(i).getName(), new FileInputStream(files.get(i)))
-                                 .build());
-        }
-        */
+
         File personXml = new File("/Users/andymc/dev/multipart-response/multipart-response/person.xml");
         attachments.add(AttachmentBuilder.newBuilder("person.xml")
                                          .inputStream("person.xml", new FileInputStream(personXml))
@@ -69,5 +61,28 @@ public class MyClient {
             return r.readEntity(new GenericType<List<IAttachment>>(){});
         }
         throw new WebApplicationException("status: " + r.getStatus());
+    }
+
+    @GET
+    @Path("/sendMultiPart")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String acceptAndSendOnMultiPartData(@QueryParam("name") String name, @QueryParam("file") String fileName) {
+
+        List<IAttachment> parts = new ArrayList<>();
+        parts.add(AttachmentBuilder.newBuilder("name").inputStream(new ByteArrayInputStream(name.getBytes())).build());
+        try {
+            parts.add(AttachmentBuilder.newBuilder("file").inputStream(fileName, new FileInputStream(fileName)).build());
+        } catch (FileNotFoundException e) {
+            throw new BadRequestException("Unable to find specified file: " + fileName, e);
+        }
+        Client c = ClientBuilder.newClient();
+        WebTarget target = c.target("http://localhost:9080/data/multipart/getContextLength");
+        Response r = target.request(MediaType.TEXT_PLAIN)
+                           .header("Content-Type", "multipart/form-data")
+                           .post(Entity.entity(parts, MediaType.MULTIPART_FORM_DATA_TYPE));
+        StringBuilder sb = new StringBuilder(r.readEntity(String.class));
+
+
+        return sb.toString();
     }
 }

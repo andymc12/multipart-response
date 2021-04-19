@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,8 +12,6 @@ import java.util.Map;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.enterprise.context.ApplicationScoped;
-import javax.json.Json;
-import javax.json.JsonString;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.Consumes;
@@ -33,7 +32,7 @@ import com.ibm.websphere.jaxrs20.multipart.IMultipartBody;
 @ApplicationScoped
 @Produces(MediaType.MULTIPART_FORM_DATA)
 @Consumes(MediaType.MULTIPART_FORM_DATA)
-public class HelloController {
+public class MultiPartResource {
 
     // Invoked with:
     // curl -v -F key1=value1 -F upload=@readme.md http://localhost:9080/data/multipart
@@ -84,11 +83,30 @@ public class HelloController {
         return "Hello " + person;
     }
 
-    @GET
-    @Path("/listWithBoundary")
-    @Produces("multipart/form-data; boundary=\"thisIsMyBoundary\"")
-    public List<IAttachment> returnNewAttachmentListWithBoundary() throws FileNotFoundException {
-        return returnNewAttachmentList();
+    @POST
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/getContextLength")
+    public String printContentsAndReturnLength(List<IAttachment> list) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (IAttachment att : list) {
+            //printAttachment(att);
+            sb.append(att.getDataHandler().getName()).append(":").append(getSize(att)).append(System.lineSeparator());
+        }
+
+        return sb.toString();
+    }
+
+    long getSize(IAttachment att) throws IOException {
+        InputStream is = att.getDataHandler().getInputStream();
+        long totalBytesRead = 0;
+        byte[] buf = new byte[1024];
+        int bytesRead = is.read(buf);
+        while (bytesRead >= 0) {
+            totalBytesRead += bytesRead;
+            bytesRead = is.read(buf);
+        }
+
+        return totalBytesRead;
     }
 
     void printAttachment(IAttachment attachment) {
@@ -140,20 +158,4 @@ public class HelloController {
             //ex.printStackTrace();
         }
     }
-
-    @GET
-    @Path("/abc")
-    @Produces("text/plain;qs=0.5")
-    public String textResponse() {
-        return "textString";
-    }
-
-    @GET
-    @Path("/abc")
-    @Produces("application/json;qs=1")
-    public JsonString jsonResponse() {
-        return Json.createValue("jsonString");
-    }
-
-
 }
